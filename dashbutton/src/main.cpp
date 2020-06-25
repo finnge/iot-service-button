@@ -2,29 +2,76 @@
 
 #include "rgb_lcd.h"
 
+#define PIN_BUTTON 33
+
+// States
+#define WAITING_TO_START 0
+#define AUTHENTICATION 10
+#define WAITING_TO_ABORT 20
+#define ABORT 21
+#define SENDING 30
+#define RESPONSE 40
+
 rgb_lcd lcd;
+byte isPressed = LOW;
+int currentState = WAITING_TO_START;
+bool firstTime = true;
 
-#define PIN1 33
-#define PIN2 26
+const int color[] = {255, 0, 136};
 
-const int color[] = {255, 0, 0};
 
 void setup() {
-    pinMode(PIN1, INPUT);
-    pinMode(PIN2, OUTPUT);
-    Serial.begin(9600);
+    pinMode(PIN_BUTTON, INPUT);
+    // Serial.begin(9600);
     lcd.begin(16, 2);
     lcd.setRGB(color[0], color[1], color[2]);
-    lcd.print("hello, iot!");
+    
+    lcd.print("");
 }
 
 void loop() {
-    byte currentState = digitalRead(PIN1);
+    switch (currentState) {
+        case WAITING_TO_START:
+            // enter state
+            if (firstTime) {
+                lcd.clear();
+                lcd.print("waiting...");
+                firstTime = false;
+            }
 
-    if (currentState == HIGH) {
-        digitalWrite(PIN2, HIGH);
-    } else {
-        digitalWrite(PIN2, LOW);
+            // leave state
+            isPressed = digitalRead(PIN_BUTTON);
+            if (isPressed == HIGH) {
+                firstTime = true;
+                currentState = AUTHENTICATION;
+            }
+            break;
+
+        case AUTHENTICATION:
+            lcd.clear();
+            lcd.print("Halten Sie RFID an Sensor.");
+            isPressed = digitalRead(PIN_BUTTON);
+            if (isPressed == HIGH) {
+                currentState = WAITING_TO_ABORT;
+            }
+            break;
+
+        case WAITING_TO_ABORT:
+            break;
+
+        case ABORT:
+            lcd.clear();
+            lcd.print("Vorgang abgebrochen!");
+            delay(100);
+            lcd.clear();
+            delay(100);
+            currentState = WAITING_TO_START;
+            break;
+
+        case SENDING:
+            break;
+
+        case RESPONSE:
+            break;
     }
-    Serial.println(currentState);
 }
