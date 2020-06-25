@@ -3,6 +3,7 @@
 #include "rgb_lcd.h"
 
 #define PIN_BUTTON 33
+#define PIN_SOUND 26
 
 // States
 #define WAITING_TO_START 0
@@ -23,7 +24,8 @@ const int color[] = {255, 0, 136};
 
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
-    // Serial.begin(9600);
+    pinMode(PIN_SOUND, OUTPUT);
+    Serial.begin(9600);
     lcd.begin(16, 2);
     lcd.setRGB(color[0], color[1], color[2]);
 
@@ -37,7 +39,10 @@ void loop() {
             if (firstTime) {
                 lcd.clear();
                 lcd.print("waiting...");
+
                 firstTime = false;
+
+                Serial.println("Enter WAITING_TO_START");
             }
 
             // leave state
@@ -45,6 +50,8 @@ void loop() {
             if (isPressed == HIGH) {
                 firstTime = true;
                 currentState = AUTHENTICATION;
+
+                Serial.println("Leave WAITING_TO_START");
             }
             break;
 
@@ -56,16 +63,28 @@ void loop() {
 
                 firstTime = false;
                 isClear = false;
+
+                Serial.println("Enter AUTHENTICATION");
             }
 
-            // enter state
+            // check button
             isPressed = digitalRead(PIN_BUTTON);
             if (!isClear && isPressed == LOW) {
                 isClear = true;
+                Serial.println("> clear");
             }
+
+            // leave state
             if (isClear && isPressed == HIGH) {
                 firstTime = true;
                 currentState = WAITING_TO_ABORT;
+
+                Serial.println("Leave AUTHENTICATION");
+
+                // make sound
+                digitalWrite(PIN_SOUND, HIGH);
+                delay(250);
+                digitalWrite(PIN_SOUND, LOW);
             }
             break;
 
@@ -73,40 +92,62 @@ void loop() {
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Verarbeiten – Abbrechen?");  // TODO: umbruch
+                lcd.print("Verarbeiten - Abbrechen?");  // TODO: umbruch
 
-                countdown = 3000;
+                countdown = 300;
                 firstTime = false;
                 isClear = false;
-            }
 
-            // go down
-            countdown--;
+                Serial.println("Enter WAITING_TO_ABORT");
+            }
 
             // check for button
             isPressed = digitalRead(PIN_BUTTON);
             if (!isClear && isPressed == LOW) {
                 isClear = true;
+                Serial.println("> clear");
             }
-            if (isClear && isPressed == HIGH) {
+
+            // go down
+            if (isClear) {
+                Serial.println(countdown);
+                countdown = countdown - 1;
+            }
+            
+            if (isClear && isPressed == HIGH) { // Bug
                 firstTime = true;
                 currentState = ABORT;
+
+                Serial.println("Leaving WAITING_TO_ABORT");
             }
 
             // normal leave
             if (countdown == 0) {
                 firstTime = true;
                 currentState = SENDING;
+
+                Serial.println("Leaving WAITING_TO_ABORT");
             }
             break;
 
         case ABORT:
-            lcd.clear();
-            lcd.print("Vorgang abgebrochen!");
-            delay(100);
-            lcd.clear();
-            delay(100);
+            if (firstTime) {
+                lcd.clear();
+                lcd.print("Vorgang abgebrochen!");  // TODO: Umbruch
+
+                firstTime = false;
+
+                Serial.println("Enter ABORT");
+                delay(1000);
+                lcd.clear();
+                delay(500);
+            }
+
+            // leaving
+            firstTime = true;
             currentState = RESET;
+
+            Serial.println("Leaving ABORT");
             break;
 
         case SENDING:
@@ -115,12 +156,22 @@ void loop() {
                 lcd.print("Bestellung wurde gesendet");  // TODO: Umbruch
 
                 firstTime = false;
+
+                Serial.println("Enter SENDING");
             }
 
             // MQTT Nachricht senden
 
-            // delay(100);
+            delay(1000); // Synthetisch
+            firstTime = true;
             currentState = RESET;
+
+            Serial.println("Leaving SENDING");
+
+            // make sound
+            digitalWrite(PIN_SOUND, HIGH);
+            delay(250);
+            digitalWrite(PIN_SOUND, LOW);
             break;
 
         case RESET:  // vllt überspringen
@@ -129,10 +180,15 @@ void loop() {
                 lcd.print("Danke!");  // TODO: Umbruch
 
                 firstTime = false;
+
+                Serial.println("Enter RESET");
             }
 
-            // delay(100);
+            delay(1000);
+            firstTime = true;
             currentState = WAITING_TO_START;
+
+            Serial.println("Leaving RESET");
             break;
     }
 }
