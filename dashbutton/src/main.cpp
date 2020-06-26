@@ -1,6 +1,8 @@
 #include <Arduino.h>
 
 #include "rgb_lcd.h"
+#include "secret.h"
+#include "iot_wifi.h"
 
 #define PIN_BUTTON 33
 #define PIN_SOUND 26
@@ -20,7 +22,11 @@ bool firstTime = true;
 bool isClear = false;
 int countdown = 0;
 
+PubSubClient client;
+
 const int color[] = {255, 0, 136};
+
+void mqtt_callback(char *topic, byte *payload, unsigned int length);
 
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
@@ -28,17 +34,36 @@ void setup() {
     Serial.begin(9600);
     lcd.begin(16, 2);
     lcd.setRGB(color[0], color[1], color[2]);
-
+    lcd.setCursor(0, 0);
     lcd.print("");
+
+    Serial.print("Connecting to ... ");
+    Serial.println(WIFI_SSID);
+
+    client = setupWifi();
+    client.setCallback(mqtt_callback);
+
+    Serial.print("Successful connected to ... ");
+    Serial.println(WIFI_SSID);
 }
 
 void loop() {
+
+    if(!client.connected()) {
+        reconnect(client);
+    }
+
+    client.loop();
+
     switch (currentState) {
         case WAITING_TO_START:
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("waiting...");
+                lcd.print("Button drücken");
+                lcd.setCursor(0, 1);
+                lcd.print("um zu starten");
+                lcd.setCursor(0, 0);
 
                 firstTime = false;
 
@@ -59,7 +84,10 @@ void loop() {
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Halten Sie RFID an Sensor.");  // TODO: umbruch
+                lcd.print("Halten Sie RFID");
+                lcd.setCursor(0, 1);
+                lcd.print("an den Sensor.");  // umbruch
+                lcd.setCursor(0, 0);
 
                 firstTime = false;
                 isClear = false;
@@ -92,7 +120,10 @@ void loop() {
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Verarbeiten - Abbrechen?");  // TODO: umbruch
+                lcd.print("Verarbeiten - ");
+                lcd.setCursor(0, 1);
+                lcd.print("Abbrechen?");
+                lcd.setCursor(0, 0);
 
                 countdown = 300;
                 firstTime = false;
@@ -153,7 +184,10 @@ void loop() {
         case SENDING:
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Bestellung wurde gesendet");  // TODO: Umbruch
+                lcd.print("Bestellung wurde");
+                lcd.setCursor(0, 1);
+                lcd.print("gesendet!");  // Umbruch
+                lcd.setCursor(0, 0);
 
                 firstTime = false;
 
@@ -191,4 +225,13 @@ void loop() {
             Serial.println("Leaving RESET");
             break;
     }
+}
+
+void mqtt_callback(char *topic, byte *payload, unsigned int length){
+    Serial.print("Recieved messages: ");
+    Serial.println(topic);
+    for (int i = 0; i < length; i++) {
+        Serial.printf("%c", (char)payload[i]);  // Ausgabe der gesamten Nachricht
+    }
+    Serial.println();
 }
