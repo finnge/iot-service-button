@@ -1,8 +1,11 @@
 #include <Arduino.h>
 
+// #include "iot_wifi.h"
+#include <PubSubClient.h>
+
+#include "WiFi.h"
 #include "rgb_lcd.h"
 #include "secret.h"
-#include "iot_wifi.h"
 
 #define PIN_BUTTON 33
 #define PIN_SOUND 26
@@ -22,11 +25,48 @@ bool firstTime = true;
 bool isClear = false;
 int countdown = 0;
 
-PubSubClient client;
+const char *broker = "broker.hivemq.com";
+const char *topic = "thkoeln/iot/team03/bestellung";
+
+WiFiClient espClient;
+PubSubClient client(espClient);
 
 const int color[] = {255, 0, 136};
 
 void mqtt_callback(char *topic, byte *payload, unsigned int length);
+
+void setupWifi() {
+    Serial.print("\nConnecting to");
+    Serial.println(WIFI_SSID);
+
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(100);
+        Serial.println(WiFi.status());
+    }
+
+    Serial.print("\nConnected to");
+    Serial.println(WIFI_SSID);
+}
+
+/*** Connenct/Reconnect to MQTT Broker in Case of Connection loss ***/
+void reconnect() {
+    while (!client.connected()) {
+        Serial.print("\nConencting to ");
+        Serial.println(broker);
+        if (client.connect(
+                "TH_Koeln_IoT_Team03_ESP8266Client-"))  // ClientName am Server, sollte unique sein
+        {
+            Serial.print("\nConnected to");
+            Serial.println(broker);
+            client.subscribe(topic);
+        } else {
+            Serial.print("\nTrying again...");
+            delay(5000);
+        }
+    }
+}
 
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
@@ -35,22 +75,28 @@ void setup() {
     lcd.begin(16, 2);
     lcd.setRGB(color[0], color[1], color[2]);
     lcd.setCursor(0, 0);
-    lcd.print("");
+
+    lcd.print("Trying connect");
+    lcd.setCursor(0, 1);
+    lcd.print("to WiFi...");
+    lcd.setCursor(0, 0);
 
     Serial.print("Connecting to ... ");
     Serial.println(WIFI_SSID);
 
-    client = setupWifi();
+    
+    setupWifi();
+    client.setServer(broker, 1883);
     client.setCallback(mqtt_callback);
+    // client.setCallback(mqtt_callback);
 
     Serial.print("Successful connected to ... ");
     Serial.println(WIFI_SSID);
 }
 
 void loop() {
-
-    if(!client.connected()) {
-        reconnect(client);
+    if (!client.connected()) {
+        reconnect();
     }
 
     client.loop();
@@ -60,7 +106,7 @@ void loop() {
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Button drücken");
+                lcd.print("Button druecken");
                 lcd.setCursor(0, 1);
                 lcd.print("um zu starten");
                 lcd.setCursor(0, 0);
@@ -144,8 +190,8 @@ void loop() {
                 Serial.println(countdown);
                 countdown = countdown - 1;
             }
-            
-            if (isClear && isPressed == HIGH) { // Bug
+
+            if (isClear && isPressed == HIGH) {  // Bug
                 firstTime = true;
                 currentState = ABORT;
 
@@ -164,7 +210,10 @@ void loop() {
         case ABORT:
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Vorgang abgebrochen!");  // TODO: Umbruch
+                lcd.print("Vorgang");
+                lcd.setCursor(0, 1);
+                lcd.print("abgebrochen!");  // Umbruch
+                lcd.setCursor(0, 0);
 
                 firstTime = false;
 
@@ -196,7 +245,7 @@ void loop() {
 
             // MQTT Nachricht senden
 
-            delay(1000); // Synthetisch
+            delay(1000);  // Synthetisch
             firstTime = true;
             currentState = RESET;
 
@@ -227,11 +276,12 @@ void loop() {
     }
 }
 
-void mqtt_callback(char *topic, byte *payload, unsigned int length){
+void mqtt_callback(char *topic, byte *payload, unsigned int length) {
     Serial.print("Recieved messages: ");
     Serial.println(topic);
     for (int i = 0; i < length; i++) {
-        Serial.printf("%c", (char)payload[i]);  // Ausgabe der gesamten Nachricht
+        Serial.printf("%c",
+                      (char)payload[i]);  // Ausgabe der gesamten Nachricht
     }
     Serial.println();
 }
