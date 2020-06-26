@@ -5,7 +5,7 @@
 
 #include "secret.h"
 
-const char *broker = "hivemq.dock.moxd.io";
+const char *broker = "broker.hivemq.com";
 const char *topic = "thkoeln/iot/team03/bestellung";
 
 PubSubClient setupWifi() {
@@ -16,10 +16,10 @@ PubSubClient setupWifi() {
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(100);
-        Serial.println(WiFi.status());
+        // Serial.println(WiFi.status());
     }
 
-    client.setServer(broker, 1883);
+    // client.setServer(broker, 1883);
 
     return client;
 }
