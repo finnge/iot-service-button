@@ -1,24 +1,12 @@
 #include <Arduino.h>
-#include <PubSubClient.h>
-
-#include "rgb_lcd.h"
-
-// AWS-----
-#include <ArduinoJson.h>
 #include <MQTTClient.h>
 #include <WiFiClientSecure.h>
 
-#include "WiFi.h"
+#include "AWS.h"
+#include "rgb_lcd.h"
 #include "secrets.h"
 
-// The MQTT topics that this device should publish/subscribe
-#define AWS_IOT_PUBLISH_TOPIC "esp32/pub"
-#define AWS_IOT_SUBSCRIBE_TOPIC "esp32/sub"
-
-WiFiClientSecure net = WiFiClientSecure();
-MQTTClient client = MQTTClient(256);
-// AWS-----
-
+// Pins
 #define PIN_BUTTON 33
 #define PIN_SOUND 26
 
@@ -37,111 +25,18 @@ bool firstTime = true;
 bool isClear = false;
 int countdown = 0;
 
-const char *broker = "broker.hivemq.com";
-const char *topic = "thkoeln/iot/team03/bestellung";
-
-// WiFiClient espClient;
-// PubSubClient client(espClient);
+WiFiClientSecure network;
+MQTTClient client;
 
 const int color[] = {255, 0, 136};
 
-void mqtt_callback(char *topic, byte *payload, unsigned int length);
-
-// AWS----
-void connectAWS() {
-    WiFi.mode(WIFI_STA);
-    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
-
-    Serial.println("Connecting to Wi-Fi");
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(500);
-        Serial.print(".");
-    }
-
-    // Configure WiFiClientSecure to use the AWS IoT device credentials
-    net.setCACert(AWS_CERT_CA);
-    net.setCertificate(AWS_CERT_CRT);
-    net.setPrivateKey(AWS_CERT_PRIVATE);
-
-    // Connect to the MQTT broker on the AWS endpoint we defined earlier
-    client.begin(AWS_IOT_ENDPOINT, 8883, net);
-
-    // Create a message handler
-    // client.onMessage(messageHandler);
-
-    Serial.print("Connecting to AWS IOT");
-
-    while (!client.connect(THINGNAME)) {
-        Serial.print(".");
-        delay(100);
-    }
-
-    if (!client.connected()) {
-        Serial.println("AWS IoT Timeout!");
-        return;
-    }
-
-    // Subscribe to a topic
-    client.subscribe(AWS_IOT_SUBSCRIBE_TOPIC);
-
-    Serial.println("AWS IoT Connected!");
-}
-
 void publishMessage() {
-    StaticJsonDocument<200> doc;
-    doc["time"] = millis();
-    doc["sensor_a0"] = analogRead(0);
-    char jsonBuffer[512];
-    serializeJson(doc, jsonBuffer);  // print to client
-
-    client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
+    client.publish(DASHBUTTON_TOPIC_ORDER, "Schrauben;10;Dashbutton1;1234");
 }
 
 void messageHandler(String &topic, String &payload) {
     Serial.println("incoming: " + topic + " - " + payload);
-
-    //  StaticJsonDocument<200> doc;
-    //  deserializeJson(doc, payload);
-    //  const char* message = doc["message"];
 }
-// AWS----
-
-/***
-    void setupWifi() {
-    Serial.print("\nConnecting to");
-    Serial.println(WIFI_SSID);
-
-    WiFi.begin(WIFI_SSID, WIFI_PASS);
-
-    while (WiFi.status() != WL_CONNECTED) {
-        delay(100);
-        Serial.println(WiFi.status());
-    }
-
-    Serial.print("\nConnected to");
-    Serial.println(WIFI_SSID);
-}
-
-// Connenct/Reconnect to MQTT Broker in Case of Connection loss
-void reconnect() {
-    while (!client.connected()) {
-        Serial.print("\nConencting to ");
-        Serial.println(broker);
-        if (client.connect(
-                "TH_Koeln_IoT_Team03_ESP8266Client-"))  // ClientName am Server,
-                                                        // sollte unique sein
-        {
-            Serial.print("\nConnected to");
-            Serial.println(broker);
-            client.subscribe(topic);
-        } else {
-            Serial.print("\nTrying again...");
-            delay(5000);
-        }
-    }
-}
-***/
 
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
@@ -153,30 +48,22 @@ void setup() {
 
     lcd.print("Try connecting");
     lcd.setCursor(0, 1);
+    lcd.print("to Network...");
+    lcd.setCursor(0, 0);
+
+    network = setupWiFi();
+
+    lcd.clear();
+    lcd.print("Try connecting");
+    lcd.setCursor(0, 1);
     lcd.print("to AWS...");
     lcd.setCursor(0, 0);
 
-    connectAWS();
-
-    /***
-        Serial.print("Connecting to ... ");
-        Serial.println(WIFI_SSID);
-
-        setupWifi();
-        client.setServer(broker, 1883);
-        client.setCallback(mqtt_callback);
-        client.setCallback(mqtt_callback);
-
-        Serial.print("Successful connected to ... ");
-        Serial.println(WIFI_SSID);
-        ***/
+    client = connectAWS(network);
 }
 
 void loop() {
-    // if (!client.connected()) {
-    //    reconnect();
-    //}
-
+    testConnectionAWS(client);
     client.loop();
 
     switch (currentState) {
@@ -353,14 +240,4 @@ void loop() {
             Serial.println("Leaving RESET");
             break;
     }
-}
-
-void mqtt_callback(char *topic, byte *payload, unsigned int length) {
-    Serial.print("Recieved messages: ");
-    Serial.println(topic);
-    for (int i = 0; i < length; i++) {
-        Serial.printf("%c",
-                      (char)payload[i]);  // Ausgabe der gesamten Nachricht
-    }
-    Serial.println();
 }

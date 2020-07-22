@@ -1,6 +1,8 @@
+#ifndef SECRETS
+#define SECRETS
+
 #include <pgmspace.h>
 
-#define SECRET
 #define THINGNAME ""
 
 const char WIFI_SSID[] = "";
@@ -42,3 +44,5 @@ static const char AWS_CERT_PRIVATE[] PROGMEM = R"KEY(
 -----BEGIN RSA PRIVATE KEY-----
 -----END RSA PRIVATE KEY-----
 )KEY";
+
+#endif
