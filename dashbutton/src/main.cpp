@@ -70,8 +70,6 @@ void setup() {
 
     connectAWS(&client, &network);
 
-    lcd.clear();
-
     SPI.begin();                        // Init SPI bus
     mfrc522.PCD_Init();                 // Init MFRC522
     mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card
@@ -129,14 +127,16 @@ void loop() {
                     Serial.print("Card detected, UID: ");
                     Serial.println(uid);
                 }
-                if (uid == 2589037589) {
-                    currentState = WAITING_TO_ABORT;
-
-                    Serial.println("Leave AUTHENTICATION");
+                if (uid == 2589037589 || uid == 2577276341) {
                     // make sound
                     digitalWrite(PIN_SOUND, HIGH);
                     delay(250);
                     digitalWrite(PIN_SOUND, LOW);
+
+                    // leaving state
+                    currentState = WAITING_TO_ABORT;
+                    firstTime = true;
+                    Serial.println("Leave AUTHENTICATION");
                 }
             }
             break;
