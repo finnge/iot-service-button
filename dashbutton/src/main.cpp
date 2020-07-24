@@ -51,7 +51,7 @@ void setup() {
     lcd.print("to Network...");
     lcd.setCursor(0, 0);
 
-    network = setupWiFi(network);
+    setupWiFi(&network);
 
     lcd.clear();
     lcd.print("Try connecting");
@@ -59,11 +59,11 @@ void setup() {
     lcd.print("to AWS...");
     lcd.setCursor(0, 0);
 
-    client = connectAWS(client, network);
+    connectAWS(&client, &network);
 }
 
 void loop() {
-    testConnectionAWS(client);
+    testConnectionAWS(&client);
     client.loop();
 
     switch (currentState) {
