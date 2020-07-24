@@ -3,7 +3,7 @@
 /**
  * Establishes a connection to a local WiFi network.
  */
-WiFiClientSecure setupWiFi() {
+WiFiClientSecure setupWiFi(WiFiClientSecure network) {
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
@@ -16,8 +16,6 @@ WiFiClientSecure setupWiFi() {
 
     Serial.println("");
 
-    WiFiClientSecure network = WiFiClientSecure();
-
     // Configure WiFiClientSecure to use the AWS IoT device credentials
     network.setCACert(AWS_CERT_CA);
     network.setCertificate(AWS_CERT_CRT);
@@ -29,8 +27,7 @@ WiFiClientSecure setupWiFi() {
 /**
  * Establishes a connection to AWS.
  */
-MQTTClient connectAWS(WiFiClientSecure network) {
-    MQTTClient client = MQTTClient(256);
+MQTTClient connectAWS(MQTTClient client, WiFiClientSecure network) {
     client.begin(AWS_IOT_ENDPOINT, 8883, network);
 
     Serial.println("[2/2] Connecting to AWS IoT");

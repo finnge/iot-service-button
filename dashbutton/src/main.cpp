@@ -25,8 +25,8 @@ bool firstTime = true;
 bool isClear = false;
 int countdown = 0;
 
-WiFiClientSecure network;
-MQTTClient client;
+WiFiClientSecure network = WiFiClientSecure();
+MQTTClient client = MQTTClient(256);
 
 const int color[] = {255, 0, 136};
 
@@ -51,7 +51,7 @@ void setup() {
     lcd.print("to Network...");
     lcd.setCursor(0, 0);
 
-    network = setupWiFi();
+    network = setupWiFi(network);
 
     lcd.clear();
     lcd.print("Try connecting");
@@ -59,7 +59,7 @@ void setup() {
     lcd.print("to AWS...");
     lcd.setCursor(0, 0);
 
-    client = connectAWS(network);
+    client = connectAWS(client, network);
 }
 
 void loop() {

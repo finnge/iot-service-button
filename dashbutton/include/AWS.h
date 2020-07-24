@@ -24,10 +24,10 @@
  */
 
 // Establishes a connection to a local WiFi network.
-WiFiClientSecure setupWiFi();
+WiFiClientSecure setupWiFi(WiFiClientSecure network);
 
 // Establishes a connection to AWS.
-MQTTClient connectAWS(WiFiClientSecure network);
+MQTTClient connectAWS(MQTTClient client, WiFiClientSecure network);
 
 // Try to reconnect to AWS.
 void testConnectionAWS(MQTTClient client);
