@@ -62,6 +62,4 @@ void testConnectionAWS(MQTTClient *client) {
 
         Serial.println("");
     }
-
-    Serial.println("AWS IoT Connected!");
 }
