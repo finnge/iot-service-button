@@ -16,8 +16,11 @@
 // Submit a new order.
 #define DASHBUTTON_TOPIC_ORDER "order"
 
-// New incoming authentication ID (via RFID sensor)
+// New incoming authentication ID (via RFID sensor).
 #define DASHBUTTON_TOPIC_AUTH "auth"
+
+// Microcontroller has no data to show.
+#define DASHBUTTON_TOPIC_SEND_INIT "init"
 
 /**
  * Functions

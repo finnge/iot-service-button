@@ -70,6 +70,13 @@ void setup() {
 
     connectAWS(&client, &network);
 
+    //"Button druecken "
+    lcd.clear();
+    lcd.print("Try connecting");
+    lcd.setCursor(0, 1);
+    lcd.print("to AWS...");
+    lcd.setCursor(0, 0);
+
     SPI.begin();                        // Init SPI bus
     mfrc522.PCD_Init();                 // Init MFRC522
     mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card
