@@ -1,14 +1,20 @@
 #include <Arduino.h>
+#include <MFRC522.h>
 #include <MQTTClient.h>
+#include <SPI.h>
 #include <WiFiClientSecure.h>
+#include <stdlib.h>
 
 #include "AWS.h"
+#include "Authentication.h"
 #include "rgb_lcd.h"
 #include "secrets.h"
 
 // Pins
 #define PIN_BUTTON 33
 #define PIN_SOUND 26
+#define PIN_SLAVE_SELECT 12
+#define PIN_RESET 14
 
 // States
 #define WAITING_TO_START 0
@@ -29,6 +35,7 @@ WiFiClientSecure network = WiFiClientSecure();
 MQTTClient client = MQTTClient(256);
 
 const int color[] = {255, 0, 136};
+MFRC522 mfrc522(PIN_SLAVE_SELECT, PIN_RESET);  // Create MFRC522 instance
 
 void publishMessage() {
     char output[30];
@@ -62,6 +69,10 @@ void setup() {
     lcd.setCursor(0, 0);
 
     connectAWS(&client, &network);
+
+    SPI.begin();                        // Init SPI bus
+    mfrc522.PCD_Init();                 // Init MFRC522
+    mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card
 }
 
 void loop() {
@@ -109,23 +120,24 @@ void loop() {
             }
 
             // check button
-            isPressed = digitalRead(PIN_BUTTON);
-            if (!isClear && isPressed == LOW) {
-                isClear = true;
-                Serial.println("> clear");
-            }
 
-            // leave state
-            if (isClear && isPressed == HIGH) {
-                firstTime = true;
-                currentState = WAITING_TO_ABORT;
+            if (mfrc522.PICC_IsNewCardPresent()) {
+                unsigned long uid = auth_getUID(&mfrc522);
+                if (uid != -1) {
+                    Serial.print("Card detected, UID: ");
+                    Serial.println(uid);
+                }
+                if (uid == 2589037589 || uid == 2577276341) {
+                    // make sound
+                    digitalWrite(PIN_SOUND, HIGH);
+                    delay(250);
+                    digitalWrite(PIN_SOUND, LOW);
 
-                Serial.println("Leave AUTHENTICATION");
-
-                // make sound
-                digitalWrite(PIN_SOUND, HIGH);
-                delay(250);
-                digitalWrite(PIN_SOUND, LOW);
+                    // leaving state
+                    currentState = WAITING_TO_ABORT;
+                    firstTime = true;
+                    Serial.println("Leave AUTHENTICATION");
+                }
             }
             break;
 
@@ -213,16 +225,16 @@ void loop() {
             // MQTT Nachricht senden
             publishMessage();
 
-            delay(1000);  // Synthetisch
-            firstTime = true;
-            currentState = RESET;
-
-            Serial.println("Leaving SENDING");
-
             // make sound
             digitalWrite(PIN_SOUND, HIGH);
             delay(250);
             digitalWrite(PIN_SOUND, LOW);
+
+            // leaving
+            firstTime = true;
+            currentState = RESET;
+
+            Serial.println("Leaving SENDING");
             break;
 
         case RESET:  // vllt überspringen
