@@ -13,8 +13,8 @@
 // Pins
 #define PIN_BUTTON 33
 #define PIN_SOUND 26
-#define PIN_SLAVE_SELECT 21
-#define PIN_RESET 22
+#define PIN_SLAVE_SELECT 12
+#define PIN_RESET 14
 
 // States
 #define WAITING_TO_START 0
@@ -69,6 +69,8 @@ void setup() {
     lcd.setCursor(0, 0);
 
     connectAWS(&client, &network);
+
+    lcd.clear();
 
     SPI.begin();                        // Init SPI bus
     mfrc522.PCD_Init();                 // Init MFRC522
