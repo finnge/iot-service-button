@@ -31,7 +31,9 @@ MQTTClient client = MQTTClient(256);
 const int color[] = {255, 0, 136};
 
 void publishMessage() {
-    client.publish(DASHBUTTON_TOPIC_ORDER, "Schrauben;10;Dashbutton1;1234");
+    char output[30];
+    sprintf(output, "Schrauben;10;%s;1234", THINGNAME);
+    client.publish(DASHBUTTON_TOPIC_ORDER, output);
 }
 
 void messageHandler(String &topic, String &payload) {
