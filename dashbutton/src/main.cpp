@@ -5,24 +5,7 @@
 #include <WiFiClientSecure.h>
 #include <stdlib.h>
 
-#include "AWS.h"
-#include "Authentication.h"
-#include "rgb_lcd.h"
-#include "secrets.h"
-
-// Pins
-#define PIN_BUTTON 33
-#define PIN_SOUND 26
-#define PIN_SLAVE_SELECT 12
-#define PIN_RESET 14
-
-// States
-#define WAITING_TO_START 0
-#define AUTHENTICATION 10
-#define WAITING_TO_ABORT 20
-#define ABORT 21
-#define SENDING 30
-#define RESET 40
+#include "Helper.h"
 
 rgb_lcd lcd;
 byte isPressed = LOW;
@@ -37,15 +20,7 @@ MQTTClient client = MQTTClient(256);
 const int color[] = {255, 0, 136};
 MFRC522 mfrc522(PIN_SLAVE_SELECT, PIN_RESET);  // Create MFRC522 instance
 
-void publishMessage() {
-    char output[30];
-    sprintf(output, "Schrauben;10;%s;1234", THINGNAME);
-    client.publish(DASHBUTTON_TOPIC_ORDER, output);
-}
 
-void messageHandler(String &topic, String &payload) {
-    Serial.println("incoming: " + topic + " - " + payload);
-}
 
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
@@ -223,7 +198,7 @@ void loop() {
             }
 
             // MQTT Nachricht senden
-            publishMessage();
+            publishMessage(&client);
 
             // make sound
             digitalWrite(PIN_SOUND, HIGH);
