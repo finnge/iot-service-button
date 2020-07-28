@@ -7,21 +7,32 @@
 
 #include "Helper.h"
 
+// Objects
 rgb_lcd lcd;
+WiFiClientSecure network = WiFiClientSecure();
+MQTTClient client = MQTTClient(256);
+MFRC522 mfrc522(PIN_SLAVE_SELECT, PIN_RESET);
+
+// settings
+const int color[] = {255, 0, 136};
+
+// runtime
 byte isPressed = LOW;
-int currentState = WAITING_TO_START;
+int currentState = STANDBY;
 bool firstTime = true;
 bool isClear = false;
 int countdown = 0;
 
-WiFiClientSecure network = WiFiClientSecure();
-MQTTClient client = MQTTClient(256);
+String productname = "PRODUCT";
+int order_counter = 5;
+unsigned long uid = -1;
+unsigned long currentUID = -1;
 
-const int color[] = {255, 0, 136};
-MFRC522 mfrc522(PIN_SLAVE_SELECT, PIN_RESET);  // Create MFRC522 instance
-
-
-
+    /**
+     * Setup
+     *
+     * Runs on startup of Microcontroller
+     */
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
     pinMode(PIN_SOUND, OUTPUT);
@@ -50,18 +61,58 @@ void setup() {
     mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card
 }
 
+/**
+ * Loop
+ *
+ * Runs in an infinate loop every 'tick'
+ */
 void loop() {
     testConnectionAWS(&client);
     client.loop();
 
     switch (currentState) {
+        case STANDBY:
+            // enter state
+            if (firstTime) {
+                lcd.clear();
+                lcd.print(productname);
+                lcd.setCursor(0, 1);
+                lcd.print("order 5x");
+                lcd.setCursor(0, 0);
+
+                firstTime = false;
+
+                Serial.println("Enter STANDBY");
+            }
+
+            // leave state 1
+            isPressed = digitalRead(PIN_BUTTON);
+            if (isPressed == HIGH) {
+                firstTime = true;
+                currentState = WAITING_TO_START;
+
+                Serial.println("Leave STANDBY");
+            }
+
+            // leave state 2
+            if (mfrc522.PICC_IsNewCardPresent()) {
+                uid = auth_getUID(&mfrc522);
+                if (uid != -1) {
+                    firstTime = true;
+                    currentState = AUTHENTICATION;
+
+                    Serial.println("Leave STANDBY");
+                }
+            }
+            break;
+
         case WAITING_TO_START:
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Button druecken");
+                lcd.print("Hold RFID-Card");
                 lcd.setCursor(0, 1);
-                lcd.print("um zu starten");
+                lcd.print("to Sensor");
                 lcd.setCursor(0, 0);
 
                 firstTime = false;
@@ -69,24 +120,27 @@ void loop() {
                 Serial.println("Enter WAITING_TO_START");
             }
 
-            // leave state
-            isPressed = digitalRead(PIN_BUTTON);
-            if (isPressed == HIGH) {
-                firstTime = true;
-                currentState = AUTHENTICATION;
+            // todo: timer
 
-                Serial.println("Leave WAITING_TO_START");
+            // leave state
+            if (mfrc522.PICC_IsNewCardPresent()) {
+                uid = auth_getUID(&mfrc522);
+                if (uid != -1) {
+                    firstTime = true;
+                    currentState = AUTHENTICATION;
+
+                    Serial.println("Leave WAITING_TO_START");
+                }
             }
+
             break;
 
         case AUTHENTICATION:
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Halten Sie RFID");
+                lcd.print("Checking...");
                 lcd.setCursor(0, 1);
-                lcd.print("an den Sensor.");  // umbruch
-                lcd.setCursor(0, 0);
 
                 firstTime = false;
                 isClear = false;
@@ -95,78 +149,71 @@ void loop() {
             }
 
             // check button
+            if (uid == 2589037589 || uid == 2577276341) {
+                // make sound
+                digitalWrite(PIN_SOUND, HIGH);
+                delay(250);
+                digitalWrite(PIN_SOUND, LOW);
 
-            if (mfrc522.PICC_IsNewCardPresent()) {
-                unsigned long uid = auth_getUID(&mfrc522);
-                if (uid != -1) {
-                    Serial.print("Card detected, UID: ");
-                    Serial.println(uid);
-                }
-                if (uid == 2589037589 || uid == 2577276341) {
-                    // make sound
-                    digitalWrite(PIN_SOUND, HIGH);
-                    delay(250);
-                    digitalWrite(PIN_SOUND, LOW);
-
-                    // leaving state
-                    currentState = WAITING_TO_ABORT;
-                    firstTime = true;
-                    Serial.println("Leave AUTHENTICATION");
-                }
+                // leaving state
+                currentState = CONFIRMATION;
+                firstTime = true;
+                Serial.println("Leave AUTHENTICATION");
+            }
+            else {
+                // leaving state
+                currentState = FAILED;
+                firstTime = true;
+                Serial.println("Leave AUTHENTICATION");
             }
             break;
 
-        case WAITING_TO_ABORT:
+        case CONFIRMATION:
             // enter state
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Verarbeiten - ");
+                lcd.print("Checking...");
                 lcd.setCursor(0, 1);
-                lcd.print("Abbrechen?");
+                lcd.print("Hold");
                 lcd.setCursor(0, 0);
 
-                countdown = 300;
+                countdown = 500;
                 firstTime = false;
                 isClear = false;
 
                 Serial.println("Enter WAITING_TO_ABORT");
             }
 
-            // check for button
-            isPressed = digitalRead(PIN_BUTTON);
-            if (!isClear && isPressed == LOW) {
-                isClear = true;
-                Serial.println("> clear");
-            }
+            // check for RFID
+            currentUID = auth_getUID(&mfrc522);
 
-            // go down
-            if (isClear) {
-                Serial.println(countdown);
-                countdown = countdown - 1;
-            }
+            Serial.printf("Curr: %lu <=> New %lu\n", uid, currentUID);
 
-            if (isClear && isPressed == HIGH) {  // Bug
+            if (currentUID == -1 || currentUID != uid) {
                 firstTime = true;
                 currentState = ABORT;
 
                 Serial.println("Leaving WAITING_TO_ABORT");
-            }
-
-            // normal leave
-            if (countdown == 0) {
+            } else if (countdown == 0) {
                 firstTime = true;
-                currentState = SENDING;
+                currentState = SEND_ORDER;
 
                 Serial.println("Leaving WAITING_TO_ABORT");
+            }
+
+            countdown = countdown - 1;
+
+            if (countdown % 100 == 0) {
+                lcd.print(".");
             }
             break;
 
         case ABORT:
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Vorgang");
+                lcd.print("Abort");
                 lcd.setCursor(0, 1);
-                lcd.print("abgebrochen!");  // Umbruch
+                lcd.print("Process");  // Umbruch
                 lcd.setCursor(0, 0);
 
                 firstTime = false;
@@ -179,22 +226,23 @@ void loop() {
 
             // leaving
             firstTime = true;
-            currentState = RESET;
+            currentState = STANDBY;
 
             Serial.println("Leaving ABORT");
             break;
 
-        case SENDING:
+        case SEND_ORDER:
+            // first time
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Bestellung wurde");
+                lcd.print("Send");
                 lcd.setCursor(0, 1);
-                lcd.print("gesendet!");  // Umbruch
+                lcd.print("order");  // Umbruch
                 lcd.setCursor(0, 0);
 
                 firstTime = false;
 
-                Serial.println("Enter SENDING");
+                Serial.println("Enter SEND_ORDER");
             }
 
             // MQTT Nachricht senden
@@ -207,26 +255,28 @@ void loop() {
 
             // leaving
             firstTime = true;
-            currentState = RESET;
+            currentState = STANDBY;
 
-            Serial.println("Leaving SENDING");
+            Serial.println("Leaving SEND_ORDER");
             break;
 
-        case RESET:  // vllt überspringen
+        case FAILED:
+            // first time
             if (firstTime) {
                 lcd.clear();
-                lcd.print("Danke!");  // TODO: Umbruch
+                lcd.print("Not Autherized");
+                lcd.setCursor(0, 1);
 
                 firstTime = false;
 
-                Serial.println("Enter RESET");
+                Serial.println("Enter FAILED");
             }
 
-            delay(1000);
+            // leaving
             firstTime = true;
-            currentState = WAITING_TO_START;
+            currentState = STANDBY;
 
-            Serial.println("Leaving RESET");
+            Serial.println("Leaving SENDING");
             break;
     }
 }

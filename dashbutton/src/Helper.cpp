@@ -11,5 +11,5 @@ void messageHandler(String topic, String payload) {
 }
 
 void setDisplay(String firstLine, String secondLine) {
-    
+
 }

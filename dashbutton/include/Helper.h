@@ -14,12 +14,14 @@
 #define PIN_RESET 14
 
 // States
-#define WAITING_TO_START 0
+#define STANDBY 0
+#define WAITING_TO_START 5
 #define AUTHENTICATION 10
-#define WAITING_TO_ABORT 20
+#define CONFIRMATION 20
 #define ABORT 21
-#define SENDING 30
-#define RESET 40
+#define FAILED 30
+#define SEND_ORDER 40
+#define SUCCESS 45
 
 
 /**
