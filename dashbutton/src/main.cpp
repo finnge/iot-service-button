@@ -25,14 +25,16 @@ int countdown = 0;
 
 String productname = "PRODUCT";
 int order_counter = 5;
-unsigned long uid = -1;
-unsigned long currentUID = -1;
+unsigned long uid = 1;
+unsigned long currentUID = 1;
+byte bufferATQA[20];
+byte bufferSize = sizeof(bufferATQA);
 
-    /**
-     * Setup
-     *
-     * Runs on startup of Microcontroller
-     */
+/**
+ * Setup
+ *
+ * Runs on startup of Microcontroller
+ */
 void setup() {
     pinMode(PIN_BUTTON, INPUT);
     pinMode(PIN_SOUND, OUTPUT);
@@ -149,7 +151,7 @@ void loop() {
             }
 
             // check button
-            if (uid == 2589037589 || uid == 2577276341) {
+            if (uid == 2589037589 || uid == 2577276341 || uid == 3111100811) {
                 // make sound
                 digitalWrite(PIN_SOUND, HIGH);
                 delay(250);
@@ -159,8 +161,7 @@ void loop() {
                 currentState = CONFIRMATION;
                 firstTime = true;
                 Serial.println("Leave AUTHENTICATION");
-            }
-            else {
+            } else {
                 // leaving state
                 currentState = FAILED;
                 firstTime = true;
@@ -177,7 +178,7 @@ void loop() {
                 lcd.print("Hold");
                 lcd.setCursor(0, 0);
 
-                countdown = 500;
+                countdown = 50;
                 firstTime = false;
                 isClear = false;
 
@@ -185,11 +186,13 @@ void loop() {
             }
 
             // check for RFID
+
+            mfrc522.PICC_WakeupA(bufferATQA, &bufferSize);
             currentUID = auth_getUID(&mfrc522);
 
             Serial.printf("Curr: %lu <=> New %lu\n", uid, currentUID);
 
-            if (currentUID == -1 || currentUID != uid) {
+            if (currentUID != uid) {
                 firstTime = true;
                 currentState = ABORT;
 
@@ -198,12 +201,13 @@ void loop() {
                 firstTime = true;
                 currentState = SEND_ORDER;
 
-                Serial.println("Leaving WAITING_TO_ABORT");
+                Serial.println("Leaving WAITING_TO_SEND");
             }
 
             countdown = countdown - 1;
+            Serial.println(countdown);
 
-            if (countdown % 100 == 0) {
+            if (countdown % 6 == 0) {
                 lcd.print(".");
             }
             break;
