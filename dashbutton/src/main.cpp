@@ -19,9 +19,10 @@ const int color[] = {255, 0, 136};
 // runtime
 byte isPressed = LOW;
 int currentState = STANDBY;
-bool firstTime = true;
+bool firstIteration = true;
 bool isClear = false;
-int countdown = 0;
+unsigned long thisMillis = 0;
+unsigned long lastMillis = 0;
 
 String productname = "PRODUCT";
 int order_counter = 5;
@@ -41,20 +42,19 @@ void setup() {
     Serial.begin(9600);
     lcd.begin(16, 2);
     lcd.setRGB(color[0], color[1], color[2]);
-    lcd.setCursor(0, 0);
 
+    lcd.setCursor(0, 0);
     lcd.print("Try connecting");
     lcd.setCursor(0, 1);
     lcd.print("to Network...");
-    lcd.setCursor(0, 0);
 
     setupWiFi(&network);
 
     lcd.clear();
+    lcd.setCursor(0, 0);
     lcd.print("Try connecting");
     lcd.setCursor(0, 1);
     lcd.print("to AWS...");
-    lcd.setCursor(0, 0);
 
     connectAWS(&client, &network);
 
@@ -75,14 +75,14 @@ void loop() {
     switch (currentState) {
         case STANDBY:
             // enter state
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print(productname);
                 lcd.setCursor(0, 1);
                 lcd.print("order 5x");
-                lcd.setCursor(0, 0);
 
-                firstTime = false;
+                firstIteration = false;
 
                 Serial.println("Enter STANDBY");
             }
@@ -90,7 +90,7 @@ void loop() {
             // leave state 1
             isPressed = digitalRead(PIN_BUTTON);
             if (isPressed == HIGH) {
-                firstTime = true;
+                firstIteration = true;
                 currentState = WAITING_TO_START;
 
                 Serial.println("Leave STANDBY");
@@ -100,7 +100,7 @@ void loop() {
             if (mfrc522.PICC_IsNewCardPresent()) {
                 uid = auth_getUID(&mfrc522);
                 if (uid != -1) {
-                    firstTime = true;
+                    firstIteration = true;
                     currentState = AUTHENTICATION;
 
                     Serial.println("Leave STANDBY");
@@ -110,14 +110,14 @@ void loop() {
 
         case WAITING_TO_START:
             // enter state
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print("Hold RFID-Card");
                 lcd.setCursor(0, 1);
                 lcd.print("to Sensor");
-                lcd.setCursor(0, 0);
 
-                firstTime = false;
+                firstIteration = false;
 
                 Serial.println("Enter WAITING_TO_START");
             }
@@ -128,7 +128,7 @@ void loop() {
             if (mfrc522.PICC_IsNewCardPresent()) {
                 uid = auth_getUID(&mfrc522);
                 if (uid != -1) {
-                    firstTime = true;
+                    firstIteration = true;
                     currentState = AUTHENTICATION;
 
                     Serial.println("Leave WAITING_TO_START");
@@ -139,12 +139,13 @@ void loop() {
 
         case AUTHENTICATION:
             // enter state
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print("Checking...");
                 lcd.setCursor(0, 1);
 
-                firstTime = false;
+                firstIteration = false;
                 isClear = false;
 
                 Serial.println("Enter AUTHENTICATION");
@@ -159,28 +160,29 @@ void loop() {
 
                 // leaving state
                 currentState = CONFIRMATION;
-                firstTime = true;
+                firstIteration = true;
                 Serial.println("Leave AUTHENTICATION");
             } else {
                 // leaving state
                 currentState = FAILED;
-                firstTime = true;
+                firstIteration = true;
                 Serial.println("Leave AUTHENTICATION");
             }
             break;
 
         case CONFIRMATION:
             // enter state
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
-                lcd.print("Checking...");
-                lcd.setCursor(0, 1);
-                lcd.print("Hold");
                 lcd.setCursor(0, 0);
+                lcd.print("Checking... Hold");
+                lcd.setCursor(0, 1);
 
-                countdown = 50;
-                firstTime = false;
+                firstIteration = false;
                 isClear = false;
+
+                thisMillis = millis();
+                lastMillis = 0;
 
                 Serial.println("Enter WAITING_TO_ABORT");
             }
@@ -193,43 +195,53 @@ void loop() {
             Serial.printf("Curr: %lu <=> New %lu\n", uid, currentUID);
 
             if (currentUID != uid) {
-                firstTime = true;
+                firstIteration = true;
                 currentState = ABORT;
 
                 Serial.println("Leaving WAITING_TO_ABORT");
-            } else if (countdown == 0) {
-                firstTime = true;
+            } else if (millis() >= thisMillis + CONFIRMATION_PERIOD) {
+                firstIteration = true;
                 currentState = SEND_ORDER;
 
                 Serial.println("Leaving WAITING_TO_SEND");
             }
 
-            countdown = countdown - 1;
-            Serial.println(countdown);
-
-            if (countdown % 6 == 0) {
+            if ((millis() - lastMillis) > ((CONFIRMATION_PERIOD) / 3)) {
                 lcd.print(".");
-            }
+                lastMillis = millis();
+
+                // make sound
+                digitalWrite(PIN_SOUND, HIGH);
+                delay(100);
+                digitalWrite(PIN_SOUND, LOW);
+                }
             break;
 
         case ABORT:
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print("Abort");
                 lcd.setCursor(0, 1);
-                lcd.print("Process");  // Umbruch
-                lcd.setCursor(0, 0);
+                lcd.print("Process");
 
-                firstTime = false;
+                firstIteration = false;
 
                 Serial.println("Enter ABORT");
-                delay(1000);
-                lcd.clear();
-                delay(500);
             }
 
+            // make sound
+            digitalWrite(PIN_SOUND, HIGH);
+            delay(500);
+            digitalWrite(PIN_SOUND, LOW);
+
+            // wait a bit
+            delay(1000);
+            lcd.clear();
+            delay(500);
+
             // leaving
-            firstTime = true;
+            firstIteration = true;
             currentState = STANDBY;
 
             Serial.println("Leaving ABORT");
@@ -237,14 +249,14 @@ void loop() {
 
         case SEND_ORDER:
             // first time
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print("Send");
                 lcd.setCursor(0, 1);
-                lcd.print("order");  // Umbruch
-                lcd.setCursor(0, 0);
+                lcd.print("order");
 
-                firstTime = false;
+                firstIteration = false;
 
                 Serial.println("Enter SEND_ORDER");
             }
@@ -254,11 +266,18 @@ void loop() {
 
             // make sound
             digitalWrite(PIN_SOUND, HIGH);
-            delay(250);
+            delay(50);
+            digitalWrite(PIN_SOUND, LOW);
+            delay(25);
+            digitalWrite(PIN_SOUND, HIGH);
+            delay(100);
             digitalWrite(PIN_SOUND, LOW);
 
+            // wait a bit
+            delay(500);
+
             // leaving
-            firstTime = true;
+            firstIteration = true;
             currentState = STANDBY;
 
             Serial.println("Leaving SEND_ORDER");
@@ -266,18 +285,26 @@ void loop() {
 
         case FAILED:
             // first time
-            if (firstTime) {
+            if (firstIteration) {
                 lcd.clear();
+                lcd.setCursor(0, 0);
                 lcd.print("Not Autherized");
-                lcd.setCursor(0, 1);
 
-                firstTime = false;
+                firstIteration = false;
 
                 Serial.println("Enter FAILED");
             }
 
+            // make sound
+            digitalWrite(PIN_SOUND, HIGH);
+            delay(500);
+            digitalWrite(PIN_SOUND, LOW);
+
+            // wait a bit
+            delay(500);
+
             // leaving
-            firstTime = true;
+            firstIteration = true;
             currentState = STANDBY;
 
             Serial.println("Leaving SENDING");

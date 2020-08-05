@@ -23,6 +23,9 @@
 #define SEND_ORDER 40
 #define SUCCESS 45
 
+// Misc
+#define CONFIRMATION_PERIOD 2000
+
 
 /**
  * Functions
