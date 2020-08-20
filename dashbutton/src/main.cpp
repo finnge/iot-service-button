@@ -24,12 +24,15 @@ bool isClear = false;
 unsigned long thisMillis = 0;
 unsigned long lastMillis = 0;
 
-String productname = "PRODUCT";
 int order_counter = 5;
 unsigned long uid = 1;
 unsigned long currentUID = 1;
 byte bufferATQA[20];
 byte bufferSize = sizeof(bufferATQA);
+
+// configuration
+String productname = "Schrauben";
+int quantity = 10;
 
 /**
  * Setup
@@ -73,7 +76,7 @@ void setup() {
 /**
  * Loop
  *
- * Runs in an infinate loop every 'tick'
+ * Runs in an infinite loop every 'tick'
  */
 void loop() {
     testConnectionAWS(&client);
@@ -87,7 +90,9 @@ void loop() {
                 lcd.setCursor(0, 0);
                 lcd.print(productname);
                 lcd.setCursor(0, 1);
-                lcd.print("order 5x");
+                lcd.print("Menge: ");
+                lcd.print(quantity);
+                lcd.print("x");
 
                 firstIteration = false;
 
@@ -221,7 +226,7 @@ void loop() {
                 digitalWrite(PIN_SOUND, HIGH);
                 delay(100);
                 digitalWrite(PIN_SOUND, LOW);
-                }
+            }
             break;
 
         case ABORT:
