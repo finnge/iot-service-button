@@ -23,6 +23,7 @@ bool firstIteration = true;
 bool isClear = false;
 unsigned long thisMillis = 0;
 unsigned long lastMillis = 0;
+int tmpcounter = 0;
 
 int order_counter = 5;
 unsigned long uid = 1;
@@ -32,7 +33,12 @@ byte bufferSize = sizeof(bufferATQA);
 
 // configuration
 String productname = "Schrauben";
-int quantity = 10;
+int quantity = 15;
+
+// authentication
+
+#define AUTH 40
+long long auth[AUTH] = {2589037589, 2577276341};
 
 /**
  * Setup
@@ -163,22 +169,31 @@ void loop() {
                 Serial.println("Enter AUTHENTICATION");
             }
 
-            // check button
-            if (uid == 2589037589 || uid == 2577276341 || uid == 3111100811) {
-                // make sound
-                digitalWrite(PIN_SOUND, HIGH);
-                delay(250);
-                digitalWrite(PIN_SOUND, LOW);
+            tmpcounter = 0;
 
-                // leaving state
-                currentState = CONFIRMATION;
-                firstIteration = true;
-                Serial.println("Leave AUTHENTICATION");
-            } else {
-                // leaving state
-                currentState = FAILED;
-                firstIteration = true;
-                Serial.println("Leave AUTHENTICATION");
+            // check button
+            for (int i = 0; i < AUTH; i++) {
+                if (uid == auth[i]) {
+                    // make sound
+                    digitalWrite(PIN_SOUND, HIGH);
+                    delay(250);
+                    digitalWrite(PIN_SOUND, LOW);
+
+                    // leaving state
+                    currentState = CONFIRMATION;
+                    firstIteration = true;
+                    Serial.println("Leave AUTHENTICATION");
+                } else {
+                    tmpcounter = tmpcounter + 1;
+                    Serial.println(tmpcounter);
+
+                    if (tmpcounter == AUTH) {
+                        // leaving state
+                        currentState = FAILED;
+                        firstIteration = true;
+                        Serial.println("Leave AUTHENTICATION");
+                    }
+                }
             }
             break;
 
@@ -187,8 +202,9 @@ void loop() {
             if (firstIteration) {
                 lcd.clear();
                 lcd.setCursor(0, 0);
-                lcd.print("Checking... Hold");
+                lcd.print("Checking...");
                 lcd.setCursor(0, 1);
+                lcd.print("Hold ");
 
                 firstIteration = false;
                 isClear = false;
@@ -274,7 +290,7 @@ void loop() {
             }
 
             // MQTT Nachricht senden
-            publishMessage(&client);
+            publishMessage(&client, productname, quantity);
 
             // make sound
             digitalWrite(PIN_SOUND, HIGH);
