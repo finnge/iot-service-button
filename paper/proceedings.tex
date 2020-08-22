@@ -1,0 +1,181 @@
+\documentclass{sigchi}
+
+% Copyright
+\CopyrightYear{2020}
+
+\toappear{
+    Permission to make digital or hard copies of part or all of this work for personal or classroom use is granted without fee provided that copies are not made or distributed for profit or commercial advantage and that copies bear this notice and the full citation on the first page. Copyrights for third-party components of this work must be honoured. For all other uses, contact the owner\hspace*{.5pt}/author(s). \par\smallskip
+    \copyright\ \the\copyrtyr\ \plainauthor
+}
+
+% Arabic page numbers for submission.  Remove this line to eliminate
+% page numbers for the camera ready copy
+\pagenumbering{arabic}
+
+% Load basic packages
+\usepackage{balance}       % to better equalize the last page
+\usepackage{graphics}      % for EPS, load graphicx instead 
+\usepackage[T1]{fontenc}   % for umlauts and other diaeresis
+\usepackage{txfonts}
+\usepackage{mathptmx}
+\usepackage[pdflang={en-GB},pdftex]{hyperref}
+\usepackage{color}
+\usepackage{booktabs}
+\usepackage{textcomp}
+
+% Some optional stuff you might like/need.
+\usepackage{microtype}        % Improved Tracking and Kerning
+% \usepackage[all]{hypcap}    % Fixes bug in hyperref caption linking
+\usepackage{ccicons}          % Cite your images correctly!
+% \usepackage[utf8]{inputenc} % for a UTF8 editor only
+
+
+% Paper metadata (use plain text, for PDF inclusion and later
+% re-using, if desired).  Use \emtpyauthor when submitting for review
+% so you remain anonymous.
+\def\plaintitle{Automation of ordering processes in the industry 4.0}
+\def\plainsubtitle{Developing a Prototype for a Service Button with Authentication Abilities}
+\def\plainauthor{Finn Nils Gedrath, Leonard Pelzer}
+\def\emptyauthor{}
+\def\plainkeywords{industry 4.0, automation of ordering processes, internet of things, radio-frequency identification, amazon web services}
+\def\plaingeneralterms{Prototyping, Seminar}
+
+% llt: Define a global style for URLs, rather that the default one
+\makeatletter
+\def\url@leostyle{%
+  \@ifundefined{selectfont}{
+    \def\UrlFont{\sf}
+  }{
+    \def\UrlFont{\small\bf\ttfamily}
+  }}
+\makeatother
+\urlstyle{leo}
+
+% To make various LaTeX processors do the right thing with page size.
+\def\pprw{8.5in}
+\def\pprh{11in}
+\special{papersize=\pprw,\pprh}
+\setlength{\paperwidth}{\pprw}
+\setlength{\paperheight}{\pprh}
+\setlength{\pdfpagewidth}{\pprw}
+\setlength{\pdfpageheight}{\pprh}
+
+% Make sure hyperref comes last of your loaded packages, to give it a
+% fighting chance of not being over-written, since its job is to
+% redefine many LaTeX commands.
+\definecolor{linkColor}{RGB}{6,125,233}
+\hypersetup{%
+  pdftitle={\plaintitle: \plainsubtitle},
+% Use \plainauthor for final version.
+  pdfauthor={\plainauthor},
+  %pdfauthor={\emptyauthor},
+  pdfkeywords={\plainkeywords},
+  pdfdisplaydoctitle=true, % For Accessibility
+  bookmarksnumbered,
+  pdfstartview={FitH},
+  %colorlinks,
+  citecolor=black,
+  filecolor=black,
+  linkcolor=black,
+  urlcolor=linkColor,
+  breaklinks=true,
+  hypertexnames=false
+}
+
+\newtheorem{principle}{Principle}[section]
+
+% create a shortcut to typeset table headings
+\newcommand\tabhead[1]{\textit{#1}}
+
+% End of preamble. Here it comes the document.
+\begin{document}
+
+\title{\plaintitle}
+\subtitle{\plainsubtitle}
+
+\numberofauthors{2}
+\author{%
+  \alignauthor{\\Finn Nils Gedrath\\
+    \affaddr{TH Köln}\\
+    \affaddr{Gummersbach, Germany}\\
+    \email{finn\_nils.gedrath@smail.th-koeln.de}}\\
+  \alignauthor{\\Leonard Pelzer\\
+    \affaddr{TH Köln}\\
+    \affaddr{Gummersbach, Germany}\\
+    \email{leonard.pelzer@smail.th-koeln.de}}\\
+}
+
+
+\teaser{
+    \center
+    \includegraphics[width=\textwidth]{figures/microcontroller.jpeg}
+    \caption{Finished prototype of a service button using ESP32 and Grove sensors and actuators.}
+}
+
+\maketitle
+
+\begin{abstract}
+    The digitalization process is as prominent in modern industry 4.0 as in our day-to-day life. Our approach to such transformation is a service button that can help employees in various different contexts to reorder products or building blocks and is also setup with a authentication abilities. This product lives in the context of the internet of things and can be connected with different suppliers and other working processes. This term paper will focus on the conception and development of a prototype for a service button. It will highlight the context of use by examine the problem space and taking a closer look at the interaction with the system especially how an extra authentication step can be included in the process. We will also discuss the choices of used sensors, actuators and authentication procedures and the paradigms of system architecture. We will conclude by discussing various ethics and security parameters and by taking a look at possible transformations to a ready-to-use product.
+\end{abstract}
+
+
+% ACM Classfication
+\begin{CCSXML}
+<ccs2012>
+    <concept>
+        <concept_id>10003120.10003138</concept_id>
+        <concept_desc>Human-centered computing~Ubiquitous and mobile computing</concept_desc>
+        <concept_significance>500</concept_significance>
+    </concept>
+    <concept>
+        <concept_id>10010520.10010553</concept_id>
+        <concept_desc>Computer systems organization~Embedded and cyber-physical systems</concept_desc>
+        <concept_significance>300</concept_significance>
+    </concept>
+</ccs2012>
+\end{CCSXML}
+
+\ccsdesc[500]{Human-centered computing~Ubiquitous and mobile computing}
+\ccsdesc[300]{Computer systems organization~Embedded and cyber-physical systems}
+
+% Author Keywords
+\keywords{\plainkeywords}
+
+% Print the classficiation codes
+\printccsdesc
+
+
+
+\input{content}
+
+\balance{}
+
+% REFERENCES FORMAT
+% References must be the same font size as other body text.
+\bibliographystyle{SIGCHI-Reference-Format}
+\bibliography{literatur}
+
+\appendix
+
+\subsection{Open Source Project}
+
+The entire development process is documented via Git on GitHub and is published as an open source project under the Apache 2.0 License.
+
+\begin{itemize}
+    \item Repository on GitHub: \\ \url{https://github.com/finnge/iot-service-button/}
+    \item Website on GitHub Pages: \\ \url{https://finnge.github.io/iot-service-button/}
+\end{itemize}
+
+\subsection{Demo}
+
+A video was made to see the prototype in use and to show its operability. It can be viewed under the following link: \\
+\url{https://youtube.com/BLABLA}
+
+\balance{}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
