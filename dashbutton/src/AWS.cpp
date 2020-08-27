@@ -25,6 +25,7 @@ void setupWiFi(WiFiClientSecure *network) {
 /**
  * Establishes a connection to AWS.
  */
+
 void connectAWS(MQTTClient *client, WiFiClientSecure *network) {
     (*client).begin(AWS_IOT_ENDPOINT, 8883, *network);
 
@@ -42,9 +43,6 @@ void connectAWS(MQTTClient *client, WiFiClientSecure *network) {
     } else {
         Serial.println("AWS IoT Connected!");
     }
-
-    (*client).subscribe("esp32/sub");
-    // (*client).subscribe(DASHBUTTON_TOPIC_AUTH);
 }
 
 /**

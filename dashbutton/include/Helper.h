@@ -26,11 +26,12 @@
 // Misc
 #define CONFIRMATION_PERIOD 2000
 
-
 /**
  * Functions
  */
-void publishMessage(MQTTClient *client);
+void publishMessage(MQTTClient *client, String product, int quantity);
+
+void subscribe(MQTTClient *client);
 
 void messageHandler(String topic, String payload);
 

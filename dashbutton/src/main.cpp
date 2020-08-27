@@ -23,13 +23,22 @@ bool firstIteration = true;
 bool isClear = false;
 unsigned long thisMillis = 0;
 unsigned long lastMillis = 0;
+int tmpcounter = 0;
 
-String productname = "PRODUCT";
 int order_counter = 5;
 unsigned long uid = 1;
 unsigned long currentUID = 1;
 byte bufferATQA[20];
 byte bufferSize = sizeof(bufferATQA);
+
+// configuration
+String productname = "Schrauben";
+int quantity = 15;
+
+// authentication
+
+#define AUTH 40
+long long auth[AUTH] = {2589037589, 2577276341};
 
 /**
  * Setup
@@ -57,16 +66,87 @@ void setup() {
     lcd.print("to AWS...");
 
     connectAWS(&client, &network);
+    client.onMessageAdvanced(callback);
+
+    client.subscribe("setup/Dashbutton1");
+    client.subscribe("auth/Dashbutton1");
+    client.subscribe("auth");
+    client.subscribe("setup");
+
+    if (client.connected() == true) {
+        Serial.println("MQTT is connected!");
+    }
+
+    client.publish("init", "init Dashbutton1");
+
+    //"Button druecken "
+    lcd.clear();
+    lcd.print("Try connecting");
+    lcd.setCursor(0, 1);
+    lcd.print("to AWS...");
+    lcd.setCursor(0, 0);
 
     SPI.begin();                        // Init SPI bus
     mfrc522.PCD_Init();                 // Init MFRC522
     mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card
 }
 
+void callback(MQTTClient *client, char topic[], char payload[],
+              int payload_length) {
+    Serial.print("Received messages: ");
+    Serial.println(topic);
+    Serial.println(payload);
+    Serial.println(payload_length);
+
+    if (strcmp(topic, "auth/Dashbutton1") == 0) {
+        char delimiter[] = ",;";
+        char *ptr;
+        char *befehl;
+        long long value;
+
+        ptr = strtok(payload, delimiter);
+        befehl = ptr;
+        ptr = strtok(NULL, delimiter);
+        value = atoll(ptr);
+        Serial.println(befehl);
+
+        if (strcmp(befehl, "PUT") == 0) {
+            for (int i = 0; i < AUTH; i++) {
+                if (auth[i] == '\0') {
+                    auth[i] = value;
+                    break;
+                }
+            }
+        }
+
+        if (strcmp(befehl, "DEL") == 0) {
+            for (int i = 0; i < AUTH; i++) {
+                if (auth[i] == value) {
+                    auth[i] = '\0';
+                    break;
+                }
+            }
+        }
+    }
+
+    if (strcmp(topic, "setup/Dashbutton1") == 0) {
+        char delimiter[] = ",;";
+        char *ptr;
+
+        ptr = strtok(payload, delimiter);
+        productname = ptr;
+        Serial.println(productname);
+        ptr = strtok(NULL, delimiter);
+        quantity = atoi(ptr);
+        Serial.println(quantity);
+        firstIteration = true;
+    }
+}
+
 /**
  * Loop
  *
- * Runs in an infinate loop every 'tick'
+ * Runs in an infinite loop every 'tick'
  */
 void loop() {
     testConnectionAWS(&client);
@@ -80,7 +160,9 @@ void loop() {
                 lcd.setCursor(0, 0);
                 lcd.print(productname);
                 lcd.setCursor(0, 1);
-                lcd.print("order 5x");
+                lcd.print("Menge: ");
+                lcd.print(quantity);
+                lcd.print("x");
 
                 firstIteration = false;
 
@@ -122,8 +204,6 @@ void loop() {
                 Serial.println("Enter WAITING_TO_START");
             }
 
-            // todo: timer
-
             // leave state
             if (mfrc522.PICC_IsNewCardPresent()) {
                 uid = auth_getUID(&mfrc522);
@@ -151,22 +231,31 @@ void loop() {
                 Serial.println("Enter AUTHENTICATION");
             }
 
-            // check button
-            if (uid == 2589037589 || uid == 2577276341 || uid == 3111100811) {
-                // make sound
-                digitalWrite(PIN_SOUND, HIGH);
-                delay(250);
-                digitalWrite(PIN_SOUND, LOW);
+            tmpcounter = 0;
 
-                // leaving state
-                currentState = CONFIRMATION;
-                firstIteration = true;
-                Serial.println("Leave AUTHENTICATION");
-            } else {
-                // leaving state
-                currentState = FAILED;
-                firstIteration = true;
-                Serial.println("Leave AUTHENTICATION");
+            // check button
+            for (int i = 0; i < AUTH; i++) {
+                if (uid == auth[i]) {
+                    // make sound
+                    digitalWrite(PIN_SOUND, HIGH);
+                    delay(250);
+                    digitalWrite(PIN_SOUND, LOW);
+
+                    // leaving state
+                    currentState = CONFIRMATION;
+                    firstIteration = true;
+                    Serial.println("Leave AUTHENTICATION");
+                } else {
+                    tmpcounter = tmpcounter + 1;
+                    Serial.println(tmpcounter);
+
+                    if (tmpcounter == AUTH) {
+                        // leaving state
+                        currentState = FAILED;
+                        firstIteration = true;
+                        Serial.println("Leave AUTHENTICATION");
+                    }
+                }
             }
             break;
 
@@ -175,8 +264,9 @@ void loop() {
             if (firstIteration) {
                 lcd.clear();
                 lcd.setCursor(0, 0);
-                lcd.print("Checking... Hold");
+                lcd.print("Checking...");
                 lcd.setCursor(0, 1);
+                lcd.print("Hold ");
 
                 firstIteration = false;
                 isClear = false;
@@ -214,7 +304,7 @@ void loop() {
                 digitalWrite(PIN_SOUND, HIGH);
                 delay(100);
                 digitalWrite(PIN_SOUND, LOW);
-                }
+            }
             break;
 
         case ABORT:
@@ -262,7 +352,7 @@ void loop() {
             }
 
             // MQTT Nachricht senden
-            publishMessage(&client);
+            publishMessage(&client, productname, quantity);
 
             // make sound
             digitalWrite(PIN_SOUND, HIGH);
