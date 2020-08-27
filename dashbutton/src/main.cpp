@@ -66,6 +66,18 @@ void setup() {
     lcd.print("to AWS...");
 
     connectAWS(&client, &network);
+    client.onMessageAdvanced(callback);
+
+    client.subscribe("setup/Dashbutton1");
+    client.subscribe("auth/Dashbutton1");
+    client.subscribe("auth");
+    client.subscribe("setup");
+
+    if (client.connected() == true) {
+        Serial.println("MQTT is connected!");
+    }
+
+    client.publish("init", "init Dashbutton1");
 
     //"Button druecken "
     lcd.clear();
@@ -77,6 +89,58 @@ void setup() {
     SPI.begin();                        // Init SPI bus
     mfrc522.PCD_Init();                 // Init MFRC522
     mfrc522.PCD_DumpVersionToSerial();  // Show details of PCD - MFRC522 Card
+}
+
+void callback(MQTTClient *client, char topic[], char payload[],
+              int payload_length) {
+    Serial.print("Received messages: ");
+    Serial.println(topic);
+    Serial.println(payload);
+    Serial.println(payload_length);
+
+    if (strcmp(topic, "auth/Dashbutton1") == 0) {
+        char delimiter[] = ",;";
+        char *ptr;
+        char *befehl;
+        long long value;
+
+        ptr = strtok(payload, delimiter);
+        befehl = ptr;
+        ptr = strtok(NULL, delimiter);
+        value = atoll(ptr);
+        Serial.println(befehl);
+
+        if (strcmp(befehl, "PUT") == 0) {
+            for (int i = 0; i < AUTH; i++) {
+                if (auth[i] == '\0') {
+                    auth[i] = value;
+                    break;
+                }
+            }
+        }
+
+        if (strcmp(befehl, "DEL") == 0) {
+            for (int i = 0; i < AUTH; i++) {
+                if (auth[i] == value) {
+                    auth[i] = '\0';
+                    break;
+                }
+            }
+        }
+    }
+
+    if (strcmp(topic, "setup/Dashbutton1") == 0) {
+        char delimiter[] = ",;";
+        char *ptr;
+
+        ptr = strtok(payload, delimiter);
+        productname = ptr;
+        Serial.println(productname);
+        ptr = strtok(NULL, delimiter);
+        quantity = atoi(ptr);
+        Serial.println(quantity);
+        firstIteration = true;
+    }
 }
 
 /**
@@ -139,8 +203,6 @@ void loop() {
 
                 Serial.println("Enter WAITING_TO_START");
             }
-
-            // todo: timer
 
             // leave state
             if (mfrc522.PICC_IsNewCardPresent()) {
