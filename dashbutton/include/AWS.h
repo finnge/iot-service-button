@@ -11,13 +11,13 @@
  */
 
 // Change of the product name and number of orders. To a specific button.
-#define DASHBUTTON_TOPIC_SETUP "setup/Dashbutton1"
+#define DASHBUTTON_TOPIC_SETUP "setup/" THINGNAME
 
 // Submit a new order.
 #define DASHBUTTON_TOPIC_ORDER "order"
 
 // New incoming authentication ID (via RFID sensor).
-#define DASHBUTTON_TOPIC_AUTH "setup/Dashbutton1"
+#define DASHBUTTON_TOPIC_AUTH "auth/" THINGNAME
 
 // Microcontroller has no data to show.
 #define DASHBUTTON_TOPIC_SEND_INIT "init"

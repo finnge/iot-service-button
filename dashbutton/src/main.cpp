@@ -68,8 +68,11 @@ void setup() {
     connectAWS(&client, &network);
     client.onMessageAdvanced(callback);
 
-    client.subscribe("setup/Dashbutton1");
-    client.subscribe("auth/Dashbutton1");
+    // String authtopic = strcat("auth/", THINGNAME);
+    // String setuptopic = strcat("setup/", THINGNAME);
+
+    client.subscribe(DASHBUTTON_TOPIC_SETUP);
+    client.subscribe(DASHBUTTON_TOPIC_AUTH);
     client.subscribe("auth");
     client.subscribe("setup");
 
@@ -98,7 +101,7 @@ void callback(MQTTClient *client, char topic[], char payload[],
     Serial.println(payload);
     Serial.println(payload_length);
 
-    if (strcmp(topic, "auth/Dashbutton1") == 0) {
+    if (strcmp(topic, DASHBUTTON_TOPIC_AUTH) == 0) {
         char delimiter[] = ",;";
         char *ptr;
         char *befehl;
@@ -110,7 +113,7 @@ void callback(MQTTClient *client, char topic[], char payload[],
         value = atoll(ptr);
         Serial.println(befehl);
 
-        if (strcmp(befehl, "PUT") == 0) {
+        if (strcmp(befehl, "POST") == 0) {
             for (int i = 0; i < AUTH; i++) {
                 if (auth[i] == '\0') {
                     auth[i] = value;
@@ -129,7 +132,7 @@ void callback(MQTTClient *client, char topic[], char payload[],
         }
     }
 
-    if (strcmp(topic, "setup/Dashbutton1") == 0) {
+    if (strcmp(topic, DASHBUTTON_TOPIC_SETUP) == 0) {
         char delimiter[] = ",;";
         char *ptr;
 
