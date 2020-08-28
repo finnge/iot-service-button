@@ -80,7 +80,7 @@ void setup() {
         Serial.println("MQTT is connected!");
     }
 
-    client.publish("init", "init Dashbutton1");
+    client.publish(DASHBUTTON_TOPIC_SEND_INIT, THINGNAME);
 
     //"Button druecken "
     lcd.clear();
