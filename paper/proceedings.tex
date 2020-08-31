@@ -109,13 +109,13 @@
 \teaser{
     \center
     \includegraphics[width=\textwidth]{figures/microcontroller.jpeg}
-    \caption{Finished prototype of a service button using ESP32 and Grove sensors and actuators.}
+    \caption{Loose prototype of a service button showing the ESP32 micro-controller and Grove sensors and actuators. The Prototype in a casing is shown in Figure \ref{fig:prototype} to suggest a ready-to-use product design.}
+    \label{fig:teaser}
 }
 
 \maketitle
-
 \begin{abstract}
-    The digitalization process is as prominent in modern industry 4.0 as in our day-to-day life. Our approach to such transformation is a service button that can help employees in various different contexts to reorder products or building blocks and is also setup with a authentication abilities. This product lives in the context of the internet of things and can be connected with different suppliers and other working processes. This term paper will focus on the conception and development of a prototype for a service button. It will highlight the context of use by examine the problem space and taking a closer look at the interaction with the system especially how an extra authentication step can be included in the process. We will also discuss the choices of used sensors, actuators and authentication procedures and the paradigms of system architecture. We will conclude by discussing various ethics and security parameters and by taking a look at possible transformations to a ready-to-use product.
+    The digitalization process is as prominent in modern industry 4.0 as in our day-to-day life. Our contribution to such transformation is a service button that can help employees in various different contexts to reorder products or building blocks and is also equipped with authentication abilities. This product lives in the context of the internet of things and can be connected with different suppliers and other working processes. This term paper will focus on the conception and development of a prototype for a service button. It will highlight the context of usage by examining the usage space and taking a closer look at the interaction with the system especially how an extra authentication step can be included in the process. We will also discuss the choices of used sensors, actuators and authentication procedures and the paradigms of system architecture. We will come to a conclusion by discussing various ethics and security parameters and by taking a look at possible transformations to a ready-to-use product.
 \end{abstract}
 
 
@@ -169,13 +169,29 @@ The entire development process is documented via Git on GitHub and is published 
 \subsection{Demo}
 
 A video was made to see the prototype in use and to show its operability. It can be viewed under the following link: \\
-\url{https://youtube.com/BLABLA}
+\url{https://youtu.be/YwqazpQT0mQ}
+
+\subsection{Assembly instructions}
+\label{sec:Assemblyinstructions}
+
+To rebuild the prototype, the following components are required:
+\begin{itemize}
+\item 1 x ESP-32
+\item 1 x RFID-Reader (MFRC-522)
+\item 1 x Button (Grove-Button) 
+\item 1 x Buzzer (Grove-Buzzer)
+\item 1 x LCD-Display (Grove - LCD RGB Backlight)
+\item 4 x Grove - 4 pin Cable
+\item 11 x Jumper Cable
+\end{itemize}
+
+First the buzzer and the button are connected using two \textit{4-pin cables}. These are connected to the grove-connectors for pin 26 for the buzzer and 33 for the button. Next the display is connected be connected. This cannot be done easily since the display needs a 5V power connection. Therefore, two \textit{4-pin cables} must be connected to four \textit{jumper cables}. One end of the cable can then be connected to the display and the other end of the cable to the grove-connector for pin 22. Note that one of the 4 jumper cables must not be connected to a \textit{4-pin cable} again, but to the 5V connector of ESP-32.
+Next the RFID reader is connected using seven\textit{jumper cables} which are plugged in the direct pins of the ESP-32. 
+The assignment of these cables and the cables for the other components can be seen in figure \ref{fig:schematics}.
+Additionally, the exact arrangement of the components can be seen in the demo video.
+
+After completing the connection of all parts of the micro-controller, the software can be flashed to the ESP-32. Before the system can function completely the backend using \textit{Amazon Web Services (AWS)} must be setup: First, an object for ESP-32 must be created in the configuration interface of the \textit{AWS IOT Core}. Thereby two certificates are created. These must be inserted into the \texttt{secrets.h} (Note the \texttt{secrets.default.h}). Another important step is the definition of the AWS endpoint. This can be done from the online interface of AWS and must also be inserted into the file. Furthermore, a unique name of the service button must be defined. The local Wi-Fi authentication-data must also be inserted into the file. This is necessary so that the ESP can connect to the network and has access to AWS. Once these steps have been carried out, the \texttt{secret.h} is fully configured. Now all files can be flashed to the ESP. In the test environment of AWS you can now subscribe to the individual MQTT-topics and send messages to the individual topics. Furthermore AWS offers many possibilities to extend the functionality of the Service Button. Dashboards can be created and lambda functions can be triggered by MQTT messages as descriped in the term paper.
 
 \balance{}
 
 \end{document}
-
-%%% Local Variables:
-%%% mode: latex
-%%% TeX-master: t
-%%% End:
