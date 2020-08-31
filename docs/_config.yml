@@ -18,7 +18,7 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: IoT Service Button
+title: IoT Service Button with Authentication Abilities
 logo: /assets/img/mi-box.svg
 email: fgedrath@th-koeln.de
 description: >- 
@@ -29,7 +29,7 @@ description: >-
   an der TH Köln (SS 2020)
 baseurl: "/iot-service-button"
 url: "https://finnge.github.io"
-show_downloads: true
+show_downloads: false
 
 # Build settings
 theme: jekyll-theme-minimal
