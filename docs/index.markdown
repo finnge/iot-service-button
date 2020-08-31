@@ -10,7 +10,7 @@ The digitalization process is as prominent in modern industry4.0 as in our day-t
 
 ## Prototype in Action
 
-<iframe style="max-width: 100%; margin-bottom: 20px" height="315" src="https://www.youtube-nocookie.com/embed/YwqazpQT0mQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe style="width: 100%; margin-bottom: 20px" height="315" src="https://www.youtube-nocookie.com/embed/YwqazpQT0mQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 ## Assembly instructions
 
