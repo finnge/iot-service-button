@@ -8,11 +8,11 @@ layout: default
 
 The digitalization process is as prominent in modern industry4.0 as in our day-to-day life. Our approach to such transfor-mation is a service button that can help employees in variousdifferent contexts to reorder products or building blocks andis also setup with a authentication abilities. This product livesin the context of the internet of things and can be connectedwith different suppliers and other working processes.  Thisterm paper will focus on the conception and development ofa prototype for a service button. It will highlight the contextof use by examine the problem space and taking a closer lookat the interaction with the system especially how an extra au-thentication step can be included in the process. We will alsodiscuss the choices of used sensors, actuators and authenti-cation procedures and the paradigms of system architecture.We will conclude by discussing various ethics and securityparameters and by taking a look at possible transformations toa ready-to-use product.
 
-## Prototype in Action
+### Prototype in Action
 
 <iframe style="width: 100%; margin-bottom: 20px" height="315" src="https://www.youtube-nocookie.com/embed/YwqazpQT0mQ" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
-## Assembly instructions
+### Assembly instructions
 
 To rebuild the prototype, the following components are required:
 
